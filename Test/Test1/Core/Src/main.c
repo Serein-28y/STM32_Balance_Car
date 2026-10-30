@@ -26,6 +26,8 @@
 #include "OLED.h"
 #include "LED.h"
 #include "Key.h"
+#include "hhMPU6050.h"
+#include "hhI2C.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -49,6 +51,7 @@
   uint16_t KeyNum=0;
   uint16_t Num=0;
   int16_t i=0;
+  int16_t AX,AY,AZ,GX,GY,GZ;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -98,33 +101,24 @@ int main(void)
   LED_Init();
   Key_Init();
   HAL_TIM_Base_Start_IT(&htim1);
- 
   LED_OFF();
+  MyI2C_Init();
+  MPU6050_Init();
+ 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    KeyNum = Key_GetNum();
-    if(KeyNum==1 )
-    {
-      Num++;
-    }
-    if(KeyNum==2)
-    {
-      Num--;
-    }
-    if(KeyNum==3 )
-    {
-      Num+=10;
-    }
-    if(KeyNum==4 )
-    {
-      Num-=10;
-    }
-    OLED_Printf(0,0,OLED_6X8,"Num:%+03d",Num);
-    OLED_Printf(0,16,OLED_6X8,"i:%+05d",i);
+    MPU6050_GetData(&AX, &AY, &AZ, &GX, &GY, &GZ);
+    OLED_Printf(0,0,OLED_8X16,"%+06d",AX);
+    OLED_Printf(0,16,OLED_8X16,"%+06d",AY);
+    OLED_Printf(0,32,OLED_8X16,"%+06d",AZ);
+    OLED_Printf(64,0,OLED_8X16,"%+06d",GX);
+    OLED_Printf(64,16,OLED_8X16,"%+06d",GY);
+    OLED_Printf(64,32,OLED_8X16,"%+06d",GZ);
+
 		/*调用OLED_Update函数，将OLED显存数组的内容更新到OLED硬件进行显示*/
 		OLED_Update();
   }
@@ -133,7 +127,7 @@ int main(void)
     /* USER CODE BEGIN 3 */
 }
   /* USER CODE END 3 */
-}
+
 
 /**
   * @brief System Clock Configuration

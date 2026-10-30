@@ -50,8 +50,8 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     User/Src/OLED.c
     User/Src/OLED_Data.c
     User/Src/Key.c
-    User/Src/MPU6050.c
-    User/Src/MyI2C.c
+    User/Src/hhMPU6050.c
+    User/Src/hhI2C.c
 )
 
 # Add include paths
