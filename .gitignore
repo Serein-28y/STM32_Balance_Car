@@ -1,0 +1,27 @@
+﻿# Build outputs
+build/
+Debug/
+Release/
+cmake-build-*/
+*.o
+*.obj
+*.elf
+*.bin
+*.hex
+*.map
+*.d
+*.su
+*.lst
+*.axf
+
+# IDE / editor
+.vscode/
+.idea/
+*.uvguix*
+*.uvoptx
+*.uvprojx
+*.code-workspace
+
+# OS
+Thumbs.db
+.DS_Store
