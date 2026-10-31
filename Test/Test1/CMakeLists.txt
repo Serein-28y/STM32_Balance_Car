@@ -54,6 +54,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     User/Src/hhMPU6050.c
     User/Src/hhI2C.c
     User/Src/hhMotor.c
+    User/Src/hhEncoderSpeed.c
 )
 
 # Add include paths

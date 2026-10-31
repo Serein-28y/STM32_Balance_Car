@@ -29,6 +29,7 @@
 #include "hhMPU6050.h"
 #include "hhI2C.h"
 #include "hhMotor.h"
+#include "hhEncoderSpeed.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -54,6 +55,8 @@
   int16_t i=0;
   int16_t AX,AY,AZ,GX,GY,GZ;
   int16_t PWML,PWMR;
+  float SpeedL,SpeedR;
+  
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -109,6 +112,7 @@ int main(void)
   MyI2C_Init();
   MPU6050_Init();
   InitMotor();
+  InitAllEncoderAll();
  
   /* USER CODE END 2 */
 
@@ -133,11 +137,16 @@ int main(void)
     {
       PWMR-=10;
     }
-    
+
     Motor_SetPWM(1,PWML);
     Motor_SetPWM(2,PWMR);
+
     OLED_Printf(0,0,OLED_8X16,"PWML:%+4d",PWML);
     OLED_Printf(0,16,OLED_8X16,"PWMR:%+4d",PWMR);
+    OLED_Printf(0,32,OLED_8X16,"SpeedL:%+06.2f",SpeedL);
+    OLED_Printf(0,48,OLED_8X16,"SpeedR:%+06.2f",SpeedR);
+    
+
 		/*调用OLED_Update函数，将OLED显存数组的内容更新到OLED硬件进行显示*/
 		OLED_Update();
   }
@@ -190,10 +199,18 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   {
+    static uint16_t Counter=0;
     if(htim==&htim1)
     {
       i+=1;
       Key_Tick();
+      Counter+=1;
+      if(Counter>=50)
+      {
+        Counter=0;
+        SpeedL=Encoder_Get(1)/ 44.0 / 0.05 / 9.27666; 
+        SpeedR=Encoder_Get(2)/ 44.0 / 0.05 / 9.27666;  
+      }
     }
   }
 /* USER CODE END 4 */
