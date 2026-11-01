@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "tim.h"
+#include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -30,6 +31,7 @@
 #include "hhI2C.h"
 #include "hhMotor.h"
 #include "hhEncoderSpeed.h"
+#include "Serial.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -103,6 +105,8 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM4_Init();
+  MX_USART1_UART_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
   OLED_Init(); 
   LED_Init();
@@ -113,14 +117,17 @@ int main(void)
   MPU6050_Init();
   InitMotor();
   InitAllEncoderAll();
- 
+  BlueInitAllUSART();
+  InitAllUSART();
+  hhSerialSendString("hello");
+	Serial_Printf("world");
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    KeyNum=Key_GetNum();
+    /* KeyNum=Key_GetNum();
     if(KeyNum==1)
     {
       PWML+=10;
@@ -144,8 +151,20 @@ int main(void)
     OLED_Printf(0,0,OLED_8X16,"PWML:%+4d",PWML);
     OLED_Printf(0,16,OLED_8X16,"PWMR:%+4d",PWMR);
     OLED_Printf(0,32,OLED_8X16,"SpeedL:%+06.2f",SpeedL);
-    OLED_Printf(0,48,OLED_8X16,"SpeedR:%+06.2f",SpeedR);
+    OLED_Printf(0,48,OLED_8X16,"SpeedR:%+06.2f",SpeedR); */
+    if(Serial_GetRxFlag()==1)
+    {
+      uint8_t RxData=Serial_GetRxData();
+      OLED_Printf(0,0,OLED_8X16,"RxData:%02x",RxData);
     
+    }
+    if(BlueSerial_GetRxFlag()==1)
+    {
+      
+      OLED_Printf(0,16,OLED_8X16,"RxData:%s",BlueSerial_RxPacket);
+    
+      
+    }
 
 		/*调用OLED_Update函数，将OLED显存数组的内容更新到OLED硬件进行显示*/
 		OLED_Update();
