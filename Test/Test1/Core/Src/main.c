@@ -32,6 +32,7 @@
 #include "hhMotor.h"
 #include "hhEncoderSpeed.h"
 #include "Serial.h"
+#include "math.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -58,7 +59,10 @@
   int16_t AX,AY,AZ,GX,GY,GZ;
   int16_t PWML,PWMR;
   float SpeedL,SpeedR;
-  
+  float AngleAcc;//加速度传感器测得的角度
+  float AngleGyro;//陀螺仪测得的角度
+  float Angle;//互补滤波后的角度
+  uint16_t TimerCount=0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -119,54 +123,27 @@ int main(void)
   InitAllEncoderAll();
   BlueInitAllUSART();
   InitAllUSART();
-  hhSerialSendString("hello");
-	Serial_Printf("world");
+/*   hhSerialSendString("hello");
+	Serial_Printf("world"); */
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* KeyNum=Key_GetNum();
-    if(KeyNum==1)
-    {
-      PWML+=10;
-    }
-    if(KeyNum==2)
-    {
-      PWML-=10;
-    }
-    if(KeyNum==3)
-    {
-      PWMR+=10;
-    }
-    if(KeyNum==4)
-    {
-      PWMR-=10;
-    }
-
-    Motor_SetPWM(1,PWML);
-    Motor_SetPWM(2,PWMR);
-
-    OLED_Printf(0,0,OLED_8X16,"PWML:%+4d",PWML);
-    OLED_Printf(0,16,OLED_8X16,"PWMR:%+4d",PWMR);
-    OLED_Printf(0,32,OLED_8X16,"SpeedL:%+06.2f",SpeedL);
-    OLED_Printf(0,48,OLED_8X16,"SpeedR:%+06.2f",SpeedR); */
-    if(Serial_GetRxFlag()==1)
-    {
-      uint8_t RxData=Serial_GetRxData();
-      OLED_Printf(0,0,OLED_8X16,"RxData:%02x",RxData);
-    
-    }
-    if(BlueSerial_GetRxFlag()==1)
-    {
-      
-      OLED_Printf(0,16,OLED_8X16,"RxData:%s",BlueSerial_RxPacket);
-    
-      
-    }
-
-		/*调用OLED_Update函数，将OLED显存数组的内容更新到OLED硬件进行显示*/
+    OLED_Printf(0, 0, OLED_8X16, "%+06d", AX);		//显示AX
+		OLED_Printf(0, 16, OLED_8X16, "%+06d", AY);		//显示AY
+		OLED_Printf(0, 32, OLED_8X16, "%+06d", AZ);		//显示AZ
+		OLED_Printf(64, 0, OLED_8X16, "%+06d", GX);		//显示GX
+		OLED_Printf(64, 16, OLED_8X16, "%+06d", GY);	//显示GY
+		OLED_Printf(64, 32, OLED_8X16, "%+06d", GZ);	//显示GZ 
+		OLED_Printf(64, 48, OLED_8X16, "C:%05d", TimerCount);//显示计数器
+//	   BlueSerial_Printf("[plot,%f]",AngleAcc );//发送角度数据到蓝牙串口
+	  BlueSerial_Printf("[plot,%f,%f,%f]",AngleAcc, AngleGyro, Angle );//发送通过加速度传感器和陀螺仪得到的角度数据到蓝牙串口
+	  
+//    Serial_Printf("[plot,%f]",AngleAcc );//发送角度数据到蓝牙串口
 		OLED_Update();
   }
     /* USER CODE END WHILE */
@@ -219,6 +196,7 @@ void SystemClock_Config(void)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   {
     static uint16_t Counter=0;
+    
     if(htim==&htim1)
     {
       i+=1;
@@ -230,6 +208,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         SpeedL=Encoder_Get(1)/ 44.0 / 0.05 / 9.27666; 
         SpeedR=Encoder_Get(2)/ 44.0 / 0.05 / 9.27666;  
       }
+      MPU6050_GetData(&AX,&AY,&AZ,&GX,&GY,&GZ);
+      AngleAcc=-atan2(AX, AZ)/3.14159*180;
+      AngleGyro=Angle+GY/32768.0*2000*0.001;
+      float Alpha=0.001;
+      Angle=Alpha*AngleAcc+(1-Alpha)*AngleGyro;
+      TimerCount=__HAL_TIM_GET_COUNTER(&htim1);
     }
   }
 /* USER CODE END 4 */

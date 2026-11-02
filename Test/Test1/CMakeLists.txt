@@ -33,8 +33,8 @@ enable_language(C ASM)
 
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME}
-    User/Inc/Key.h
-    User/Inc/hhMotor.h)
+    # Add user sources here
+)
 
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
@@ -47,21 +47,21 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
-    User/Src/LED.c
-    User/Src/OLED.c
-    User/Src/OLED_Data.c
-    User/Src/Key.c
-    User/Src/hhMPU6050.c
-    User/Src/hhI2C.c
-    User/Src/hhMotor.c
-    User/Src/hhEncoderSpeed.c
-    User/Src/Serial.c
+    User/Src/Drivers/LED.c
+    User/Src/Drivers/OLED.c
+    User/Src/Drivers/OLED_Data.c
+    User/Src/Drivers/Key.c
+    User/Src/Drivers/hhMPU6050.c
+    User/Src/Drivers/hhI2C.c
+    User/Src/Drivers/hhMotor.c
+    User/Src/Drivers/hhEncoderSpeed.c
+    User/Src/Drivers/Serial.c
 )
 
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
-    User/Inc
+    User/Inc/Drivers
 )
     
 # Add project symbols (macros)
