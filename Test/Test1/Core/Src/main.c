@@ -63,6 +63,8 @@
   float AngleGyro;//陀螺仪测得的角度
   float Angle;//互补滤波后的角度
   uint16_t TimerCount=0;
+  uint8_t RunFlag=0;//运行标志位
+  
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -133,6 +135,23 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    KeyNum=Key_GetNum();
+    if(KeyNum==1)
+    {
+      RunFlag=!RunFlag;
+    }
+    if(RunFlag)
+    {
+      LED_ON();
+    }else
+    {
+      LED_OFF();
+    }
+
+
+
+
+  
     OLED_Printf(0, 0, OLED_8X16, "%+06d", AX);		//显示AX
 		OLED_Printf(0, 16, OLED_8X16, "%+06d", AY);		//显示AY
 		OLED_Printf(0, 32, OLED_8X16, "%+06d", AZ);		//显示AZ
@@ -195,25 +214,23 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   {
-    static uint16_t Counter=0;
-    
+    static uint16_t Counter0=0;
+    Counter0++;
     if(htim==&htim1)
     {
-      i+=1;
       Key_Tick();
-      Counter+=1;
-      if(Counter>=50)
+      id(Counter0>=10)
       {
-        Counter=0;
-        SpeedL=Encoder_Get(1)/ 44.0 / 0.05 / 9.27666; 
-        SpeedR=Encoder_Get(2)/ 44.0 / 0.05 / 9.27666;  
+        Counter0=0;
+        MPU6050_GetData(&AX,&AY,&AZ,&GX,&GY,&GZ);
+        AngleAcc=-atan2(AX, AZ)/3.14159*180;
+        AngleGyro=Angle+GY/32768.0*2000*0.01;
+        float Alpha=0.01;
+        Angle=Alpha*AngleAcc+(1-Alpha)*AngleGyro;
+
       }
-      MPU6050_GetData(&AX,&AY,&AZ,&GX,&GY,&GZ);
-      AngleAcc=-atan2(AX, AZ)/3.14159*180;
-      AngleGyro=Angle+GY/32768.0*2000*0.001;
-      float Alpha=0.001;
-      Angle=Alpha*AngleAcc+(1-Alpha)*AngleGyro;
-      TimerCount=__HAL_TIM_GET_COUNTER(&htim1);
+    
+      
     }
   }
 /* USER CODE END 4 */
