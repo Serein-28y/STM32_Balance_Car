@@ -33,6 +33,10 @@
 #include "hhEncoderSpeed.h"
 #include "Serial.h"
 #include "math.h"
+#include "pid.h"
+#include "string.h"
+#include "stdlib.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -53,6 +57,18 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+PID_t AnglePID=
+{
+  .Kp=0,
+  .Ki=0,
+  .Kd=0,
+
+  .OutMax=100,
+  .OutMin=-100,
+};
+
+
+
   uint16_t KeyNum=0;
   uint16_t Num=0;
   int16_t i=0;
@@ -64,7 +80,8 @@
   float Angle;//互补滤波后的角度
   uint16_t TimerCount=0;
   uint8_t RunFlag=0;//运行标志位
-  
+  int16_t LeftPWM,RightPWM;
+  int16_t AvePWM,DifPWm;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -138,32 +155,59 @@ int main(void)
     KeyNum=Key_GetNum();
     if(KeyNum==1)
     {
+      PID_Init(&AnglePID);
       RunFlag=!RunFlag;
     }
-    if(RunFlag)
-    {
-      LED_ON();
-    }else
-    {
-      LED_OFF();
-    }
+    if(RunFlag){LED_ON();}else{LED_OFF();}
+    if (BlueSerial_RxFlag == 1) {
+	  	//strtok strcmp atoi/atof
+
+	  	//收到原始的数据包
+	  	char *Tag = strtok(BlueSerial_RxPacket, ",");
+	  	if (strcmp(Tag, "key") == 0) {
+	  		//收到并处理按键数据包如：[key,1,up]
+	  		//char *Name = strtok(NULL, ",");
+	  		//char *Action = strtok(NULL, ",");
+	  	} else if (strcmp(Tag, "slider") == 0) {
+	  		//收到并处理滑杆数据包如：[slider,1,78]
+	  		char *Name = strtok(NULL, ",");
+	  		char *Value = strtok(NULL, ",");
+	  		/*执行滑杆操作*/
+	  		if (strcmp(Name, "AngleKp") == 0)			//如果滑杆名称是AngleKp
+	  				{
+	  			AnglePID.Kp = atof(Value);				//则把滑杆值赋值给角度环Kp
+	  		} else if (strcmp(Name, "AngleKi") == 0)		//如果滑杆名称是AngleKi
+	  				{
+	  			AnglePID.Ki = atof(Value);				//则把滑杆值赋值给角度环Ki
+	  		} else if (strcmp(Name, "AngleKd") == 0)		//如果滑杆名称是AngleKd
+	  				{
+	  			AnglePID.Kd = atof(Value);				//则把滑杆值赋值给角度环Kd
+	  		}
+	  	} else if (strcmp(Tag, "joystick") == 0) {
+	  		//收到并处理摇杆数据包如：[joystick,-10,20,40,67]
+	  		//int8_t LH = atoi(strtok(NULL, ","));
+	  		//int8_t LV = atoi(strtok(NULL, ","));
+	  		//int8_t RH = atoi(strtok(NULL, ","));
+	  		//int8_t RV = atoi(strtok(NULL, ","));
+
+	  	}
+	  	BlueSerial_RxFlag = 0;
+	  }
+	  /*OLED显示*/
+	  OLED_Clear();
+	  OLED_Printf(0, 0, OLED_6X8, "  Angle");						//OLED左侧显示角度环参数
+	  OLED_Printf(0, 8, OLED_6X8, "P:%05.2f", AnglePID.Kp);		//角度环Kp
+	  OLED_Printf(0, 16, OLED_6X8, "I:%05.2f", AnglePID.Ki);		//角度环Ki
+	  OLED_Printf(0, 24, OLED_6X8, "D:%05.2f", AnglePID.Kd);		//角度环Kd
+	  OLED_Printf(0, 32, OLED_6X8, "T:%+05.1f", AnglePID.Target);	//角度环目标值
+	  OLED_Printf(0, 40, OLED_6X8, "A:%+05.1f", Angle);			//角度环实际值
+	  OLED_Printf(0, 48, OLED_6X8, "O:%+05.0f", AnglePID.Out);	//角度环输出值
+	  OLED_Printf(0, 56, OLED_6X8, "GY:%+05d", GY);				//显示GY，便于校准陀螺仪零漂
+	  OLED_Update();				//OLED更新
+
+	  BlueSerial_Printf("[plot,%f,%f]", AnglePID.Target, Angle);	//绘制AnglePID.Target和Angle的波形
 
 
-
-
-  
-    OLED_Printf(0, 0, OLED_8X16, "%+06d", AX);		//显示AX
-		OLED_Printf(0, 16, OLED_8X16, "%+06d", AY);		//显示AY
-		OLED_Printf(0, 32, OLED_8X16, "%+06d", AZ);		//显示AZ
-		OLED_Printf(64, 0, OLED_8X16, "%+06d", GX);		//显示GX
-		OLED_Printf(64, 16, OLED_8X16, "%+06d", GY);	//显示GY
-		OLED_Printf(64, 32, OLED_8X16, "%+06d", GZ);	//显示GZ 
-		OLED_Printf(64, 48, OLED_8X16, "C:%05d", TimerCount);//显示计数器
-//	   BlueSerial_Printf("[plot,%f]",AngleAcc );//发送角度数据到蓝牙串口
-	  BlueSerial_Printf("[plot,%f,%f,%f]",AngleAcc, AngleGyro, Angle );//发送通过加速度传感器和陀螺仪得到的角度数据到蓝牙串口
-	  
-//    Serial_Printf("[plot,%f]",AngleAcc );//发送角度数据到蓝牙串口
-		OLED_Update();
   }
     /* USER CODE END WHILE */
 
@@ -219,19 +263,43 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     if(htim==&htim1)
     {
       Key_Tick();
-      id(Counter0>=10)
+      if(Counter0>=10)
       {
         Counter0=0;
         MPU6050_GetData(&AX,&AY,&AZ,&GX,&GY,&GZ);
+        GY-=-15;//零漂
         AngleAcc=-atan2(AX, AZ)/3.14159*180;
+        AngleAcc+=0.9;
         AngleGyro=Angle+GY/32768.0*2000*0.01;
         float Alpha=0.01;
         Angle=Alpha*AngleAcc+(1-Alpha)*AngleGyro;
-
+//        Angle-=1.2;
       }
-    
+      if(Angle>50||Angle<-50) 
+      {
+        RunFlag=0;
+      }
+      if(RunFlag)
+      {
+        AnglePID.Actual=Angle;
+        PID_Update(&AnglePID);
+        AvePWM=-AnglePID.Out;
+        LeftPWM=AvePWM+DifPWm/2;
+        RightPWM=AvePWM-DifPWm/2;
+
+        if(LeftPWM>100){LeftPWM=100;}else if(LeftPWM<-100){LeftPWM=-100;}
+        if(RightPWM>100){RightPWM=100;}else if(RightPWM<-100){RightPWM=-100;}
+        Motor_SetPWM(1,LeftPWM);
+        Motor_SetPWM(2,RightPWM);
+
+      }else
+      {
+        Motor_SetPWM(1,0);
+        Motor_SetPWM(2,0);
+      }
       
     }
+    TimerCount = __HAL_TIM_GET_COUNTER(&htim1);
   }
 /* USER CODE END 4 */
 
