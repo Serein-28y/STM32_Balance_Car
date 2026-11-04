@@ -60,13 +60,22 @@
 PID_t AnglePID=
 {
   .Kp=3.8,
-  .Ki=0,
-  .Kd=3.42,
+  .Ki=0.21,
+  .Kd=3.0,
 
   .OutMax=100,
   .OutMin=-100,
 };
+PID_t SpeedPID=
+{
+  .Kp=0,
+  .Ki=0,
+  .Kd=0,
 
+  .OutMax=20.0,
+  .OutMin=-20.0,
+
+};
 
 
   uint16_t KeyNum=0;
@@ -81,7 +90,10 @@ PID_t AnglePID=
   uint16_t TimerCount=0;
   uint8_t RunFlag=0;//运行标志位
   int16_t LeftPWM,RightPWM;
-  int16_t AvePWM,DifPWm;
+  int16_t AvePWM,DifPWM;
+
+  float LeftSpeed, RightSpeed;		//左速度，右速度
+  float AveSpeed, DifSpeed;			//平均速度，差分速度
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -134,14 +146,15 @@ int main(void)
   OLED_Init(); 
   LED_Init();
   Key_Init();
-  HAL_TIM_Base_Start_IT(&htim1);
+
   LED_OFF();
   MyI2C_Init();
   MPU6050_Init();
   InitMotor();
   InitAllEncoderAll();
   BlueInitAllUSART();
-  InitAllUSART();
+  InitAllUSART(); 
+  HAL_TIM_Base_Start_IT(&htim1);
 /*   hhSerialSendString("hello");
 	Serial_Printf("world"); */
 
@@ -156,6 +169,7 @@ int main(void)
     if(KeyNum==1)
     {
       PID_Init(&AnglePID);
+      PID_Init(&SpeedPID);
       RunFlag=!RunFlag;
     }
     if(RunFlag){LED_ON();}else{LED_OFF();}
@@ -182,14 +196,29 @@ int main(void)
 	  		} else if (strcmp(Name, "AngleKd") == 0)		//如果滑杆名称是AngleKd
 	  				{
 	  			AnglePID.Kd = atof(Value);				//则把滑杆值赋值给角度环Kd
+	  		}else if (strcmp(Name, "SpeedKp") == 0)		//如果滑杆名称是SpeedKp
+	  		{
+	  			SpeedPID.Kp = atof(Value);				//则把滑杆值赋值给速度环Kp
+	  		}
+	  		else if (strcmp(Name, "SpeedKi") == 0)		//如果滑杆名称是SpeedKi
+	  		{
+	  			SpeedPID.Ki = atof(Value);				//则把滑杆值赋值给速度环Ki
+	  		}
+	  		else if (strcmp(Name, "SpeedKd") == 0)		//如果滑杆名称是SpeedKd
+	  		{
+	  			SpeedPID.Kd = atof(Value);				//则把滑杆值赋值给速度环Kd
 	  		}
 	  	} else if (strcmp(Tag, "joystick") == 0) {
 	  		//收到并处理摇杆数据包如：[joystick,-10,20,40,67]
-	  		//int8_t LH = atoi(strtok(NULL, ","));
-	  		//int8_t LV = atoi(strtok(NULL, ","));
-	  		//int8_t RH = atoi(strtok(NULL, ","));
-	  		//int8_t RV = atoi(strtok(NULL, ","));
+	  		int8_t LH = atoi(strtok(NULL, ","));
+	  			int8_t LV = atoi(strtok(NULL, ","));
+	  			int8_t RH = atoi(strtok(NULL, ","));
+	  			int8_t RV = atoi(strtok(NULL, ","));
+	  			SpeedPID.Target = LV / 25.0;		//摇杆值LV缩放后，控制速度环目标值
+	  			DifPWM = RH / 2;				//摇杆值RH缩放后，控制差分PWM，左右转弯控制
 
+	  			(void)LH;   // 显式告诉编译器：我知道它没用
+	  			(void)RV;
 	  	}
 	  	BlueSerial_RxFlag = 0;
 	  }
@@ -203,10 +232,18 @@ int main(void)
 	  OLED_Printf(0, 40, OLED_6X8, "A:%+05.1f", Angle);			//角度环实际值
 	  OLED_Printf(0, 48, OLED_6X8, "O:%+05.0f", AnglePID.Out);	//角度环输出值
 	  OLED_Printf(0, 56, OLED_6X8, "GY:%+05d", GY);				//显示GY，便于校准陀螺仪零漂
+
+	  OLED_Printf(50, 0, OLED_6X8, "Speed");						//OLED中间显示速度环参数
+	  OLED_Printf(50, 8, OLED_6X8, "%05.2f", SpeedPID.Kp);		//速度环Kp
+	  OLED_Printf(50, 16, OLED_6X8, "%05.2f", SpeedPID.Ki);		//速度环Ki
+	  OLED_Printf(50, 24, OLED_6X8, "%05.2f", SpeedPID.Kd);		//速度环Kd
+	  OLED_Printf(50, 32, OLED_6X8, "%+05.1f", SpeedPID.Target);	//速度环目标值
+	  OLED_Printf(50, 40, OLED_6X8, "%+05.1f", AveSpeed);			//速度环实际值
+	  OLED_Printf(50, 48, OLED_6X8, "%+05.0f", SpeedPID.Out);		//速度环输出值
 	  OLED_Update();				//OLED更新
 
-	  BlueSerial_Printf("[plot,%f,%f]", AnglePID.Target, Angle);	//绘制AnglePID.Target和Angle的波形
-
+//	  BlueSerial_Printf("[plot,%f,%f]", AnglePID.Target, Angle);	//绘制AnglePID.Target和Angle的波形
+	  BlueSerial_Printf("[plot,%f,%f]", SpeedPID.Target, AveSpeed);	//绘制SpeedPID.Target和AveSpeed的波形
 
   }
     /* USER CODE END WHILE */
@@ -260,6 +297,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   {
     static uint16_t Counter0=0;
     Counter0++;
+   
     if(htim==&htim1)
     {
       Key_Tick();
@@ -274,7 +312,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         float Alpha=0.01;
         Angle=Alpha*AngleAcc+(1-Alpha)*AngleGyro;
 //        Angle-=1.2;
-      }
       if(Angle>50||Angle<-50) 
       {
         RunFlag=0;
@@ -284,8 +321,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         AnglePID.Actual=Angle;
         PID_Update(&AnglePID);
         AvePWM=-AnglePID.Out;
-        LeftPWM=AvePWM+DifPWm/2;
-        RightPWM=AvePWM-DifPWm/2;
+        LeftPWM=AvePWM+DifPWM/2;
+        RightPWM=AvePWM-DifPWM/2;
 
         if(LeftPWM>100){LeftPWM=100;}else if(LeftPWM<-100){LeftPWM=-100;}
         if(RightPWM>100){RightPWM=100;}else if(RightPWM<-100){RightPWM=-100;}
@@ -296,6 +333,27 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
       {
         Motor_SetPWM(1,0);
         Motor_SetPWM(2,0);
+      }
+      }
+      
+      static uint16_t Counter1=0;
+      Counter1++;
+      if(Counter1>=50)
+      {
+        Counter1=0;
+        LeftSpeed=Encoder_Get(1)/ 44.0 / 0.05 / 9.27666;
+        RightSpeed=Encoder_Get(2)/ 44.0 / 0.05 / 9.27666;
+        
+        AveSpeed=(LeftSpeed+RightSpeed)/2.0;
+        DifSpeed=(LeftSpeed-RightSpeed);
+
+        if(RunFlag)
+        {
+          SpeedPID.Actual=AveSpeed;
+          PID_Update(&SpeedPID);
+          AnglePID.Target=SpeedPID.Out;
+
+        }
       }
       
     }
