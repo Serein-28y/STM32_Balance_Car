@@ -59,9 +59,9 @@
 /* USER CODE BEGIN PV */
 PID_t AnglePID=
 {
-  .Kp=0,
+  .Kp=3.8,
   .Ki=0,
-  .Kd=0,
+  .Kd=3.42,
 
   .OutMax=100,
   .OutMin=-100,
@@ -269,7 +269,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         MPU6050_GetData(&AX,&AY,&AZ,&GX,&GY,&GZ);
         GY-=-15;//零漂
         AngleAcc=-atan2(AX, AZ)/3.14159*180;
-        AngleAcc+=0.9;
+        AngleAcc+=0.4;
         AngleGyro=Angle+GY/32768.0*2000*0.01;
         float Alpha=0.01;
         Angle=Alpha*AngleAcc+(1-Alpha)*AngleGyro;
