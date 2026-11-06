@@ -59,9 +59,9 @@
 /* USER CODE BEGIN PV */
 PID_t AnglePID=
 {
-  .Kp=3.8,
-  .Ki=0.21,
-  .Kd=3.0,
+  .Kp= 7.00,//3.71,//3.4,//3.8,
+  .Ki=0.00,//0.30,//0.43,//0.21,
+  .Kd=6.21,//3.48,//3.46,//3.0,
 
   .OutMax=100,
   .OutMin=-100,
@@ -295,19 +295,18 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   {
-    static uint16_t Counter0=0;
-    Counter0++;
-   
     if(htim==&htim1)
     {
+      static uint16_t Counter0=0;
       Key_Tick();
+      Counter0++;
       if(Counter0>=10)
       {
         Counter0=0;
         MPU6050_GetData(&AX,&AY,&AZ,&GX,&GY,&GZ);
         GY-=-15;//零漂
         AngleAcc=-atan2(AX, AZ)/3.14159*180;
-        AngleAcc+=0.4;
+        AngleAcc+=0.1;
         AngleGyro=Angle+GY/32768.0*2000*0.01;
         float Alpha=0.01;
         Angle=Alpha*AngleAcc+(1-Alpha)*AngleGyro;
@@ -355,9 +354,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
         }
       }
-      
+      TimerCount = __HAL_TIM_GET_COUNTER(&htim1);
     }
-    TimerCount = __HAL_TIM_GET_COUNTER(&htim1);
+    
   }
 /* USER CODE END 4 */
 
