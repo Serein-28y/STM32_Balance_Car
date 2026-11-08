@@ -11,9 +11,6 @@ void PID_Init(PID_t *p)
 
 }
 
-
-
-
 void PID_Update(PID_t *p)
 {
     p->Error0 = p->Target - p->Actual;

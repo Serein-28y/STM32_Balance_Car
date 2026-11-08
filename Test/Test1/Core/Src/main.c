@@ -78,6 +78,16 @@ PID_t SpeedPID=
 
 };
 
+PID_t TurnPID=
+{
+  .Kp=0,
+  .Ki=0,
+  .Kd=0,
+
+  .OutMax=50.0,
+  .OutMin=-50.0,
+
+};
 
   uint16_t KeyNum=0;
   uint16_t Num=0;
@@ -171,6 +181,7 @@ int main(void)
     {
       PID_Init(&AnglePID);
       PID_Init(&SpeedPID);
+      PID_Init(&TurnPID);
       RunFlag=!RunFlag;
     }
     if(RunFlag){LED_ON();}else{LED_OFF();}
@@ -208,6 +219,17 @@ int main(void)
 	  		else if (strcmp(Name, "SpeedKd") == 0)		//如果滑杆名称是SpeedKd
 	  		{
 	  			SpeedPID.Kd = atof(Value);				//则把滑杆值赋值给速度环Kd
+	  		}else if (strcmp(Name, "TurnKp") == 0)		//如果滑杆名称是TurnKp
+	  		{
+	  			TurnPID.Kp = atof(Value);				//则把滑杆值赋值给转向环Kp
+	  		}
+	  		else if (strcmp(Name, "TurnKi") == 0)		//如果滑杆名称是TurnKi
+	  		{
+	  			TurnPID.Ki = atof(Value);				//则把滑杆值赋值给转向环Ki
+	  		}
+	  		else if (strcmp(Name, "TurnKd") == 0)		//如果滑杆名称是TurnKd
+	  		{
+	  			TurnPID.Kd = atof(Value);				//则把滑杆值赋值给转向环Kd
 	  		}else if (strcmp(Name, "Offset") == 0)		//如果滑杆名称是Offset
 	  		{
 	  			AnglePID.OutOffset = atof(Value);		//则把滑杆值赋值给OutOffset
@@ -219,7 +241,7 @@ int main(void)
 	  			int8_t RH = atoi(strtok(NULL, ","));
 	  			int8_t RV = atoi(strtok(NULL, ","));
 	  			SpeedPID.Target = LV / 25.0;		//摇杆值LV缩放后，控制速度环目标值
-	  			DifPWM = RH / 2;				//摇杆值RH缩放后，控制差分PWM，左右转弯控制
+	  			TurnPID.Target = RH /25.0;			//摇杆值RH缩放后，控制差分PWM，左右转弯控制
 
 	  			(void)LH;   // 显式告诉编译器：我知道它没用
 	  			(void)RV;
@@ -245,10 +267,19 @@ int main(void)
 	  OLED_Printf(50, 40, OLED_6X8, "%+05.1f", AveSpeed);			//速度环实际值
 	  OLED_Printf(50, 48, OLED_6X8, "%+05.0f", SpeedPID.Out);		//速度环输出值
     OLED_Printf(56, 56, OLED_6X8, "Offset:%02.0f", AnglePID.OutOffset); //显示输出偏移值
+
+    OLED_Printf(88, 0, OLED_6X8, "Turn");						//OLED右侧显示转向环参数
+	  OLED_Printf(88, 8, OLED_6X8, "%05.2f", TurnPID.Kp);			//转向环Kp
+	  OLED_Printf(88, 16, OLED_6X8, "%05.2f", TurnPID.Ki);		//转向环Ki
+	  OLED_Printf(88, 24, OLED_6X8, "%05.2f", TurnPID.Kd);		//转向环Kd
+	  OLED_Printf(88, 32, OLED_6X8, "%+05.1f", TurnPID.Target);	//转向环目标值
+	  OLED_Printf(88, 40, OLED_6X8, "%+05.1f", DifSpeed);			//转向环实际值
+	  OLED_Printf(88, 48, OLED_6X8, "%+05.0f", TurnPID.Out);		//转向环输出值
 	  OLED_Update();				//OLED更新
 
 //	  BlueSerial_Printf("[plot,%f,%f]", AnglePID.Target, Angle);	//绘制AnglePID.Target和Angle的波形
-	  BlueSerial_Printf("[plot,%f,%f]", SpeedPID.Target, AveSpeed);	//绘制SpeedPID.Target和AveSpeed的波形
+//	  BlueSerial_Printf("[plot,%f,%f]", SpeedPID.Target, AveSpeed);	//绘制SpeedPID.Target和AveSpeed的波形
+    BlueSerial_Printf("[plot,%f,%f]", TurnPID.Target, DifSpeed);	//绘制TurnPID.Target和DifSpeed的波形
 
   }
     /* USER CODE END WHILE */
@@ -356,6 +387,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
           SpeedPID.Actual=AveSpeed;
           PID_Update(&SpeedPID);
           AnglePID.Target=SpeedPID.Out;
+
+          TurnPID.Actual=DifSpeed;
+          PID_Update(&TurnPID);
+          DifPWM=TurnPID.Out;
 
         }
       }
