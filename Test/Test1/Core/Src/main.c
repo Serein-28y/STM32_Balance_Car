@@ -59,17 +59,18 @@
 /* USER CODE BEGIN PV */
 PID_t AnglePID=
 {
-  .Kp= 7.65,//7.00,//3.71,//3.4,//3.8,
-  .Ki=0.00,//0.00,//0.30,//0.43,//0.21,
-  .Kd=6.01,//6.21,//3.48,//3.46,//3.0,
+  .Kp= 4.14,//7.00,//3.71,//3.4,//3.8,
+  .Ki=0.36,//0.00,//0.30,//0.43,//0.21,
+  .Kd=3.56,//6.21,//3.48,//3.46,//3.0,
 
+  .OutOffset = 2,
   .OutMax=100,
   .OutMin=-100,
 };
 PID_t SpeedPID=
 {
-  .Kp=0,
-  .Ki=0,
+  .Kp=2.00,
+  .Ki=0.01,
   .Kd=0,
 
   .OutMax=20.0,
@@ -207,6 +208,9 @@ int main(void)
 	  		else if (strcmp(Name, "SpeedKd") == 0)		//如果滑杆名称是SpeedKd
 	  		{
 	  			SpeedPID.Kd = atof(Value);				//则把滑杆值赋值给速度环Kd
+	  		}else if (strcmp(Name, "Offset") == 0)		//如果滑杆名称是Offset
+	  		{
+	  			AnglePID.OutOffset = atof(Value);		//则把滑杆值赋值给OutOffset
 	  		}
 	  	} else if (strcmp(Tag, "joystick") == 0) {
 	  		//收到并处理摇杆数据包如：[joystick,-10,20,40,67]
@@ -240,6 +244,7 @@ int main(void)
 	  OLED_Printf(50, 32, OLED_6X8, "%+05.1f", SpeedPID.Target);	//速度环目标值
 	  OLED_Printf(50, 40, OLED_6X8, "%+05.1f", AveSpeed);			//速度环实际值
 	  OLED_Printf(50, 48, OLED_6X8, "%+05.0f", SpeedPID.Out);		//速度环输出值
+    OLED_Printf(56, 56, OLED_6X8, "Offset:%02.0f", AnglePID.OutOffset); //显示输出偏移值
 	  OLED_Update();				//OLED更新
 
 //	  BlueSerial_Printf("[plot,%f,%f]", AnglePID.Target, Angle);	//绘制AnglePID.Target和Angle的波形
@@ -304,7 +309,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
       {
         Counter0=0;
         MPU6050_GetData(&AX,&AY,&AZ,&GX,&GY,&GZ);
-        GY-=-15;//零漂
+        GY-=-20;//零漂
         AngleAcc=-atan2(AX, AZ)/3.14159*180;
         AngleAcc+=0.0;
         AngleGyro=Angle+GY/32768.0*2000*0.01;
