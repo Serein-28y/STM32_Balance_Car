@@ -15,6 +15,8 @@ typedef struct
     float Error0;
     float Error1;
     float ErrorInt;
+    float ErrorIntMax;
+    float ErrorIntMin;
 
     float OutMax;
     float OutMin;

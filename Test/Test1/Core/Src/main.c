@@ -60,12 +60,15 @@
 PID_t AnglePID=
 {
   .Kp= 4.14,//7.00,//3.71,//3.4,//3.8,
-  .Ki=0.36,//0.00,//0.30,//0.43,//0.21,
-  .Kd=3.56,//6.21,//3.48,//3.46,//3.0,
+  .Ki=0.30,//0.00,//0.30,//0.43,//0.21,
+  .Kd=4.97,//6.21,//3.48,//3.46,//3.0,
 
   .OutOffset = 2,
   .OutMax=100,
   .OutMin=-100,
+
+  .ErrorIntMax=1000,
+  .ErrorIntMin=-1000,
 };
 PID_t SpeedPID=
 {
@@ -76,6 +79,8 @@ PID_t SpeedPID=
   .OutMax=20.0,
   .OutMin=-20.0,
 
+  .ErrorIntMax=1000,
+  .ErrorIntMin=-1000,
 };
 
 PID_t TurnPID=
@@ -87,6 +92,8 @@ PID_t TurnPID=
   .OutMax=50.0,
   .OutMin=-50.0,
 
+  .ErrorIntMax=1000,
+  .ErrorIntMin=-1000,
 };
 
   uint16_t KeyNum=0;
