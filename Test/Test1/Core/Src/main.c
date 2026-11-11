@@ -61,39 +61,39 @@ PID_t AnglePID=
 {
   .Kp= 4.98,//7.00,//3.71,//3.4,//3.8,
   .Ki=0.20,//0.00,//0.30,//0.43,//0.21,
-  .Kd=5.28,//6.21,//3.48,//3.46,//3.0,
+  .Kd=4.86,//6.21,//3.48,//3.46,//3.0,
 
   .OutOffset = 3,
   .OutMax=100,
   .OutMin=-100,
 
-  .ErrorIntMax=1000,
-  .ErrorIntMin=-1000,
+  .ErrorIntMax=200,
+  .ErrorIntMin=-200,
 };
 PID_t SpeedPID=
 {
-  .Kp=2.80,
+  .Kp=2.70,
   .Ki=0.01,
   .Kd=0,
 
   .OutMax=20.0,
   .OutMin=-20.0,
 
-  .ErrorIntMax=1000,
-  .ErrorIntMin=-1000,
+  .ErrorIntMax=150,
+  .ErrorIntMin=-150,
 };
 
 PID_t TurnPID=
 {
-  .Kp=0,
-  .Ki=0,
+  .Kp=3.27,
+  .Ki=2.16,
   .Kd=0,
 
   .OutMax=50.0,
   .OutMin=-50.0,
 
-  .ErrorIntMax=1000,
-  .ErrorIntMin=-1000,
+  .ErrorIntMax=20,
+  .ErrorIntMin=-20,
 };
 
   uint16_t KeyNum=0;
@@ -286,7 +286,8 @@ int main(void)
 
 //	  BlueSerial_Printf("[plot,%f,%f]", AnglePID.Target, Angle);	//绘制AnglePID.Target和Angle的波形
 //	  BlueSerial_Printf("[plot,%f,%f]", SpeedPID.Target, AveSpeed);	//绘制SpeedPID.Target和AveSpeed的波形
-    BlueSerial_Printf("[plot,%f,%f]", TurnPID.Target, DifSpeed);	//绘制TurnPID.Target和DifSpeed的波形
+//    BlueSerial_Printf("[plot,%f,%f]", TurnPID.Target, DifSpeed);	//绘制TurnPID.Target和DifSpeed的波形
+//    BlueSerial_Printf("[plot,%f,%f,%f]",AnglePID.ErrorInt,SpeedPID.ErrorInt,TurnPID.ErrorInt);//绘制三个误差积分的波形
 
   }
     /* USER CODE END WHILE */
