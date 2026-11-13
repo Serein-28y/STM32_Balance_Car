@@ -164,15 +164,14 @@ int main(void)
   OLED_Init(); 
   LED_Init();
   Key_Init();
-
   LED_OFF();
   MyI2C_Init();
   MPU6050_Init();
   InitMotor();
   InitAllEncoderAll();
   BlueInitAllUSART();
-  InitAllUSART(); 
-  HAL_TIM_Base_Start_IT(&htim1);
+  InitAllUSART(); //启动中断接收一个字节
+  HAL_TIM_Base_Start_IT(&htim1);//开启定时器中断
 /*   hhSerialSendString("hello");
 	Serial_Printf("world"); */
 
@@ -354,7 +353,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         AngleGyro=Angle+GY/32768.0*2000*0.01;
         float Alpha=0.01;
         Angle=Alpha*AngleAcc+(1-Alpha)*AngleGyro;
-//        Angle-=1.2;
+
       if(Angle>50||Angle<-50) 
       {
         RunFlag=0;
